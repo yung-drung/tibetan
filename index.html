@@ -807,6 +807,8 @@
         function letterSkip(letter, setName, setMembers, inSet, roleName) {
             if (!letter) {
                 add('В слоге есть ' + roleName + '?', 'Нет.', '', '', true);
+            } else if (letter === '.') {
+                add('В слоге есть ' + roleName + '?', 'Нет. "." — разделитель: всё до точки — префикс, всё после — корень; подстрочная не назначается.', '', '', true);
             } else if (inSet) {
                 add(
                     'Буква "' + letter + '" входит в набор ' + setName + ' {' + setMembers + '}?',
