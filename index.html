@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разбор Вайли</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fdfbf7;
+            color: #3a2a1a;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .subtitle {
+            color: #88807a;
+            margin-bottom: 2rem;
+        }
+        .analyzer-area {
+            margin: 1.5rem 0;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .input-row input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.6rem 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            border: 2px solid #d4c4b8;
+            border-radius: 6px;
+            background: #fffcf9;
+            outline: none;
+        }
+        .input-row input:focus {
+            border-color: #6b2b1e;
+        }
+        .btn {
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
+            background: #6b2b1e;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #542016;
+        }
+        .input-row .examples {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        .input-row .examples button {
+            padding: 0.3rem 0.6rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            border: 1px solid #d4c4b8;
+            border-radius: 4px;
+            background: #f5f0eb;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .input-row .examples button:hover {
+            background: #ede4dc;
+        }
+        .result-area {
+            display: none;
+        }
+        .result-area.visible {
+            display: block;
+        }
+        .result-header {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            padding: 1rem;
+            background: #faf5f0;
+            border-radius: 8px;
+            border: 1px solid #ede4dc;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .result-tibetan {
+            font-size: 3rem;
+            line-height: 1.3;
+            color: #3a2a1a;
+        }
+        .result-pronunciation {
+            font-size: 1.2rem;
+            color: #6b2b1e;
+            font-style: italic;
+        }
+        .result-wylie {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #88807a;
+        }
+        .build-area {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: #faf5f0;
+            border: 1px solid #ede4dc;
+            border-radius: 8px;
+        }
+        .build-inner {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .part {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px dashed #c9b6a5;
+            min-width: 60px;
+        }
+        .part-label {
+            font-size: 0.75rem;
+            color: #88807a;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        .build-eq {
+            font-size: 1.5rem;
+            color: #c9b6a5;
+            font-weight: 300;
+        }
+        .build-result {
+            font-size: 3rem;
+            line-height: 1.2;
+            color: #3a2a1a;
+        }
+        .tib-char {
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+        .walkthrough {
+            margin: 1rem 0;
+        }
+        .wt-step {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.5rem;
+            background: #fcf9f6;
+            border: 1px solid #ede4dc;
+            border-radius: 8px;
+            border-left: 4px solid #c9b6a5;
+            transition: border-color 0.2s, opacity 0.5s ease;
+            opacity: 0;
+        }
+        .wt-step.revealed {
+            opacity: 1;
+        }
+        .wt-step .wt-answer {
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .wt-step .wt-answer.revealed {
+            opacity: 1;
+        }
+        .wt-step-quick {
+            border-left-color: #ddd2c8;
+            background: #fefcfb;
+            padding: 0.3rem 1rem;
+            min-height: 0;
+        }
+        .wt-step-quick .wt-answer {
+            font-style: italic;
+            color: #a09080;
+        }
+        .wt-step-quick .wt-question {
+            color: #a09080;
+            font-weight: 400;
+            font-size: 0.85rem;
+        }
+        .wt-syl-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6b2b1e;
+            padding: 0.4rem 0 0.2rem 0;
+            margin-top: 1rem;
+            border-bottom: 1px solid #ede4dc;
+        }
+        .wt-syl-header:first-child {
+            margin-top: 0;
+        }
+        .wt-step:hover {
+            border-left-color: #6b2b1e;
+        }
+        .wt-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 50px;
+            font-size: 0.75rem;
+            color: #88807a;
+            gap: 2px;
+        }
+        .wt-tibetan {
+            font-size: 1.6rem;
+            line-height: 1.2;
+            min-height: 2rem;
+        }
+        .wt-wylie {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #6b2b1e;
+        }
+        .wt-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .wt-question {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #3a2a1a;
+            margin-bottom: 0.3rem;
+        }
+        .wt-answer {
+            font-size: 0.9rem;
+            color: #5a4a3a;
+            line-height: 1.45;
+        }
+        .wt-answer em {
+            font-style: normal;
+            color: #6b2b1e;
+            font-weight: 600;
+        }
+        .error-msg {
+            color: #b83030;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .note-box {
+            font-size: 0.85rem;
+            color: #88807a;
+            padding: 0.5rem 0;
+            margin-top: 1rem;
+        }
+        @media (max-width: 600px) {
+            .result-tibetan {
+                font-size: 2rem;
+            }
+            .wt-step {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .wt-left {
+                flex-direction: row;
+                gap: 0.5rem;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Интерактивный разбор Вайли</h1>
+    <p class="subtitle">Введите слово в системе Вайли — получите тибетское написание, разбор по компонентам и произношение</p>
+
+    <div class="analyzer-area">
+        <div class="input-row">
+            <input type="text" id="wylie-input" placeholder="bsgom" autofocus>
+            <button class="btn" id="analyze-btn">Разобрать</button>
+            <div class="examples">
+                <span style="font-size:0.8rem;color:#88807a;">примеры:</span>
+                <button data-wylie="bsgom">bsgom</button>
+                <button data-wylie="sgra">sgra</button>
+                <button data-wylie="drung">drung</button>
+                <button data-wylie="phyogs">phyogs</button>
+                <button data-wylie="rdzogs">rdzogs</button>
+                <button data-wylie="bsam">bsam</button>
+                <button data-wylie="klog">klog</button>
+                <button data-wylie="mkhyen">mkhyen</button>
+                <button data-wylie="g.yung">g.yung</button>
+                <button data-wylie="'phags-pa">'phags-pa</button>
+                <button data-wylie="rdo-rje">rdo-rje</button>
+            </div>
+        </div>
+
+        <div class="result-area" id="result-area">
+            <div class="result-header" id="result-header"></div>
+
+            <h3 style="margin-top:0;">Разбор: вопрос-ответ</h3>
+            <div class="walkthrough" id="walkthrough-area"></div>
+
+            <h3>Сборка слога</h3>
+            <div class="build-area">
+                <div class="build-inner" id="build-area"></div>
+            </div>
+
+            <div class="note-box" id="notes-area"></div>
+        </div>
+
+        <div id="error-msg" class="error-msg"></div>
+
+        <p style="font-size:0.75rem;color:#a09080;margin-top:1rem;text-align:center;line-height:1.4;">
+            Произношение — THL Simplified Phonetic Transcription (лхасский диалект).
+            THL не передаёт тон слога, если он не маркирован акутом (é).
+        </p>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var WYLIE_MAP = {
+        'ka': '\u0F40', 'kha': '\u0F41', 'ga': '\u0F42', 'nga': '\u0F44',
+        'ca': '\u0F45', 'cha': '\u0F46', 'ja': '\u0F47', 'nya': '\u0F49',
+        'ta': '\u0F4F', 'tha': '\u0F50', 'da': '\u0F51', 'na': '\u0F53',
+        'pa': '\u0F54', 'pha': '\u0F55', 'ba': '\u0F56', 'ma': '\u0F58',
+        'tsa': '\u0F59', 'tsha': '\u0F5A', 'dza': '\u0F5B',
+        'wa': '\u0F5D', 'zha': '\u0F5E', 'za': '\u0F5F',
+        '\'a': '\u0F60',
+        'ya': '\u0F61', 'ra': '\u0F62', 'la': '\u0F63',
+        'sha': '\u0F64', 'ssa': '\u0F65', 'sa': '\u0F66', 'ha': '\u0F67',
+        'a': '\u0F68',
+        'tta': '\u0F4A', 'ttha': '\u0F4B', 'dda': '\u0F4C', 'nna': '\u0F4E',
+    };
+
+    var PREFIXES = { 'g': 1, 'd': 1, 'b': 1, 'm': 1, '\'a': 1 };
+    var SUPERSCRIPTS = { 'r': 1, 'l': 1, 's': 1 };
+    var SUBSCRIPTS = { 'y': 1, 'r': 1, 'l': 1, 'w': 1 };
+    var SUFFIXES = { 'g': 1, 'ng': 1, 'd': 1, 'n': 1, 'b': 1, 'm': 1, "'": 1, 'r': 1, 'l': 1, 's': 1 };
+    var POST_SUFFIXES = { 's': 1, 'd': 1 };
+    var VOWELS = { 'i': '\u0F72', 'u': '\u0F74', 'e': '\u0F7A', 'o': '\u0F7C' };
+    var VOWEL_NAMES = { 'i': 'i (над)', 'u': 'u (под)', 'e': 'é (над)', 'o': 'o (над)', 'a': 'a (врожд.)' };
+    var VOWEL_POS = { 'i': 'НАД', 'u': 'ПОД', 'e': 'НАД', 'o': 'НАД' };
+
+    var SHORT_TO_LONG = {
+        'kh': 'kha', 'ph': 'pha', 'th': 'tha',
+        'ts': 'tsa', 'tsh': 'tsha', 'dz': 'dza',
+        'zh': 'zha', 'sh': 'sha',
+        'ny': 'nya', 'ng': 'nga',
+        'k': 'ka', 'g': 'ga', 'c': 'ca', 'ch': 'cha', 'j': 'ja',
+        't': 'ta', 'd': 'da', 'n': 'na',
+        'p': 'pa', 'b': 'ba', 'm': 'ma',
+        'w': 'wa', 'z': 'za',
+        '\'': '\'a', '\'a': '\'a',
+        'y': 'ya', 'r': 'ra', 'l': 'la',
+        'ss': 'ssa', 's': 'sa', 'h': 'ha',
+        'a': 'a',
+        'tt': 'tta', 'tth': 'ttha', 'dd': 'dda', 'nn': 'nna',
+    };
+
+    var MULTI_2 = ['tsh', 'kh', 'ph', 'th', 'ts', 'dz', 'zh', 'sh', 'ny', 'ng', 'ch', 'tt', 'tth', 'dd', 'nn', 'ss'];
+
+    function mapShortToLong(short) {
+        return SHORT_TO_LONG[short] || short;
+    }
+
+    // Subjoined mapping
+    var SUBJOINED_MAP = {};
+    (function() {
+        var base = {
+            'ka': '\u0F90', 'kha': '\u0F91', 'ga': '\u0F92', 'nga': '\u0F94',
+            'ca': '\u0F95', 'cha': '\u0F96', 'ja': '\u0F97', 'nya': '\u0F99',
+            'ta': '\u0F9F', 'tha': '\u0FA0', 'da': '\u0FA1', 'na': '\u0FA3',
+            'pa': '\u0FA4', 'pha': '\u0FA5', 'ba': '\u0FA6', 'ma': '\u0FA8',
+            'tsa': '\u0FA9', 'tsha': '\u0FAA', 'dza': '\u0FAB',
+            'wa': '\u0FAD', 'zha': '\u0FAE', 'za': '\u0FAF',
+            '\'a': '\u0FB0', 'ya': '\u0FB1', 'ra': '\u0FB2', 'la': '\u0FB3',
+            'sha': '\u0FB4', 'ssa': '\u0FB5', 'sa': '\u0FB6', 'ha': '\u0FB7',
+        };
+        for (var k in base) SUBJOINED_MAP[k] = base[k];
+    })();
+
+    var THL_ONSET = {
+        // Simple roots
+        'k': 'k', 'kh': 'kh', 'g': 'g', 'ng': 'ng',
+        'c': 'ch', 'ch': 'ch', 'j': 'j', 'ny': 'ny',
+        't': 't', 'th': 't', 'd': 'd', 'n': 'n',
+        'p': 'p', 'ph': 'p', 'b': 'b', 'm': 'm',
+        'ts': 'ts', 'tsh': 'ts', 'dz': 'dz',
+        'zh': 'zh', 'z': 'z', "'": '', 'y': 'y',
+        'r': 'r', 'l': 'l', 'sh': 'sh', 's': 's',
+        'h': 'h', 'a': '', 'w': 'w',
+
+        // Labial onsets
+        'sp': 'p', 'dp': 'p', 'lp': 'p',
+        "'ph": 'p',
+        'rb': 'b', 'sb': 'b',
+        'lb': 'b', "'b": 'b',
+        'rm': 'm', 'sm': 'm', 'dm': 'm', 'smr': 'm',
+        'mr': 'm',
+        'db': 'w',
+
+        // Dental onsets
+        'rt': 't', 'lt': 't', 'st': 't', 'tw': 't',
+        'gt': 't', 'bt': 't', 'brt': 't', 'blt': 't',
+        'bst': 't', 'bld': 't',
+        'mth': 't', "'th": 't',
+        'rd': 'd', 'sd': 'd', 'gd': 'd', 'bd': 'd',
+        'brd': 'd', 'bsd': 'd',
+        'zl': 'd', 'bzl': 'd', 'ld': 'd', 'md': 'd', "'d": 'd',
+        'dw': 'd', 'lth': 'd',
+        'rn': 'n', 'sn': 'n', 'gn': 'n',
+        'brn': 'n', 'bsn': 'n', 'mn': 'n',
+
+        // Velar onsets
+        'rk': 'k', 'lk': 'k', 'sk': 'k', 'kw': 'k',
+        'dk': 'k', 'bk': 'k', 'brk': 'k', 'bsk': 'k',
+        'khw': 'kh', 'mkh': 'kh', "'kh": 'kh',
+        'rg': 'g', 'lg': 'g', 'sg': 'g', 'dg': 'g', 'bg': 'g',
+        'brg': 'g', 'bsg': 'g',
+        'mg': 'g', "'g": 'g',
+
+        // Retroflex onsets (kr, tr, pr → tr; khr, thr, phr → tr; gr, dr, br → dr)
+        'kr': 'tr', 'khr': 'tr', 'gr': 'dr',
+        'tr': 'tr', 'thr': 'tr', 'dr': 'dr',
+        'pr': 'tr', 'phr': 'tr', 'br': 'dr',
+        'mr': 'm', 'sr': 's', 'hr': 'hr',
+        'rkr': 'tr', 'lkr': 'tr', 'skr': 'tr',
+        'dkr': 'tr', 'dpr': 'tr', 'bkr': 'tr', 'bskr': 'tr',
+        'rgr': 'dr', 'lgr': 'dr', 'sgr': 'dr', 'dgr': 'dr',
+        'dbr': 'dr', 'bsgr': 'dr', 'rbr': 'dr', 'lbr': 'dr', 'sbr': 'dr',
+        'mgr': 'dr', "'gr": 'dr', "'dr": 'dr', "'br": 'dr',
+        'grw': 'dr',
+        'mkhr': 'tr', "'khr": 'tr', "'phr": 'tr',
+        'lpr': 'tr', 'spr': 'tr', 'bsr': 'tr',
+
+        // Palatal onsets (ky → ky; khy → khy; gy → gy)
+        'ky': 'ky', 'khy': 'khy', 'gy': 'gy',
+        'rky': 'ky', 'lky': 'ky', 'sky': 'ky',
+        'dky': 'ky', 'bky': 'ky', 'brky': 'ky', 'bsky': 'ky',
+        'rgy': 'gy', 'lgy': 'gy', 'sgy': 'gy',
+        'dgy': 'gy', 'bgy': 'gy', 'brgy': 'gy', 'bsgy': 'gy',
+        'mgy': 'gy', "'gy": 'gy',
+        'mkhy': 'khy', "'khy": 'khy',
+
+        // Palatal affricates
+        'cw': 'ch', 'gc': 'ch', 'bc': 'ch', 'lc': 'ch',
+        'py': 'ch', 'lpy': 'ch', 'spy': 'ch', 'dpy': 'ch',
+        'mch': 'ch', "'ch": 'ch',
+        'phy': 'ch', "'phy": 'ch',
+        'rby': 'j', 'lby': 'j', 'sby': 'j',
+        'rj': 'j', 'gj': 'j', 'brj': 'j',
+        'lj': 'j', 'mj': 'j', "'j": 'j', "'by": 'j',
+        'by': 'j',
+
+        // Affricates (ts, tsh, dz) with prefixes
+        'ts': 'ts', 'mts': 'ts', 'bts': 'ts', 'gts': 'ts',
+        'rts': 'ts', 'sts': 'ts', 'dts': 'ts',
+        'brts': 'ts', 'bsts': 'ts',
+        'tsh': 'ts', 'mtsh': 'ts', 'btsh': 'ts', "'tsh": 'ts',
+        'dz': 'dz', 'mdz': 'dz', 'bdz': 'dz', 'gdz': 'dz',
+        'rdz': 'dz', 'sdz': 'dz', 'ddz': 'dz',
+        'brdz': 'dz', 'bsdz': 'dz', "'dz": 'dz',
+
+        // Fricatives
+        'shw': 'sh', 'gsh': 'sh', 'bsh': 'sh',
+        'zhw': 'zh', 'gzh': 'zh', 'bzh': 'zh',
+        'gs': 's', 'bs': 's', 'sw': 's',
+
+        // Nasals / liquids
+        'rny': 'ny', 'sny': 'ny', 'gny': 'ny',
+        'brny': 'ny', 'bsny': 'ny', 'mny': 'ny',
+        'nyw': 'ny', 'rmy': 'ny', 'smy': 'ny',
+        'my': 'ny',
+        'kl': 'l', 'gl': 'l', 'bl': 'l', 'rl': 'l', 'sl': 'l',
+        'brl': 'l', 'bsl': 'l',
+        'lw': 'l', 'rw': 'r',
+
+        // Other
+        'h': 'h', 'hw': 'h',
+        'zw': 'z', 'gz': 'z', 'bz': 'z',
+        'gw': 'g',
+
+        // Special
+        'g.y': 'y', 'dby': 'y',
+        'rng': 'ng', 'lng': 'ng', 'sng': 'ng',
+        'dng': 'ng', 'brng': 'ng', 'bsng': 'ng', 'mng': 'ng',
+        'lh': 'lh',
+    };
+
+    var THL_UMLAUT_TRIGGERS = { 'd': 1, 'n': 1, 's': 1 };
+    var THL_SUFFIX = { 'g': 'k', 'ng': 'ng', 'd': '', 'n': 'n', 'b': 'p', 'm': 'm', "'": '', 'r': 'r', 'l': 'l', 's': '' };
+    var THL_POST_SUFFIX = { 's': '', 'd': '' };
+
+    function getTHLPronunciation(result) {
+        var prefix = result.prefix || '';
+        var sup = result.superscript || '';
+        var rShort = result.rootShort || '';
+        var sub = result.subscript || '';
+        var vowel = result.vowel || 'a';
+        var suffix = result.suffix || '';
+        var postSuffix = result.postSuffix || '';
+
+        // Build onset key
+        var onsetKey;
+        if (result.dotAfterRoot) {
+            onsetKey = (prefix === '\'a' ? "'" : prefix) + '.' + rShort;
+        } else {
+            onsetKey = (prefix === '\'a' ? "'" : prefix) + sup + rShort + sub;
+        }
+
+        var onset = THL_ONSET[onsetKey] || '';
+        if (!onset) {
+            // Try without prefix (e.g. 'bkl' → 'kl')
+            var stripped = (prefix === '\'a' ? "'" : '') + sup + rShort + sub;
+            if (stripped !== onsetKey) onset = THL_ONSET[stripped] || '';
+            // Try root + subscript (e.g. 'tsh' → root 'tsh')
+            if (!onset && sub) onset = THL_ONSET[rShort + sub] || '';
+            // Try root alone
+            if (!onset) {
+                var rootFallback = THL_ONSET[rShort];
+                if (rootFallback) onset = rootFallback;
+            }
+        }
+
+        var pron = onset;
+
+        // THL vowel with umlaut
+        var thlVowel = vowel;
+        if (vowel === 'e') {
+            thlVowel = 'é';
+        } else if (vowel !== 'a') {
+            thlVowel = vowel; // i, u, o
+        }
+        // THL umlaut: a→e, o→ö, u→ü from silent suffixes d, n, l, s
+        if (suffix && (THL_UMLAUT_TRIGGERS[suffix] || suffix === 'l')) {
+            if (vowel === 'a') thlVowel = 'e';
+            else if (vowel === 'o') thlVowel = 'ö';
+            else if (vowel === 'u') thlVowel = 'ü';
+        }
+
+        pron += thlVowel;
+
+        // Suffix
+        if (suffix) pron += THL_SUFFIX[suffix] || '';
+        if (postSuffix) pron += THL_POST_SUFFIX[postSuffix] || '';
+
+        return pron;
+    }
+
+    function tokenizeConsonants(str) {
+        var tokens = [];
+        var i = 0;
+        while (i < str.length) {
+            if (str.charAt(i) === '.') {
+                tokens.push({ type: 'dot', value: '.' });
+                i++;
+                continue;
+            }
+            if (i + 3 <= str.length) {
+                var c3 = str.slice(i, i + 3);
+                if (SHORT_TO_LONG[c3]) { tokens.push({ type: 'consonant', value: c3 }); i += 3; continue; }
+            }
+            if (i + 2 <= str.length) {
+                var c2 = str.slice(i, i + 2);
+                if (MULTI_2.indexOf(c2) !== -1) { tokens.push({ type: 'consonant', value: c2 }); i += 2; continue; }
+            }
+            var c1 = str.charAt(i);
+            if (c1 === '\'') {
+                tokens.push({ type: 'consonant', value: '\'a' });
+            } else if (c1 >= 'a' && c1 <= 'z') {
+                tokens.push({ type: 'consonant', value: c1 });
+            } else {
+                tokens.push({ type: 'unknown', value: c1 });
+            }
+            i++;
+        }
+        return tokens;
+    }
+
+    function parseSyllable(wylie) {
+        if (!wylie) return null;
+        var result = { wylie: wylie, tibetan: '', pronunciation: '', steps: [], error: null };
+        wylie = wylie.toLowerCase().trim();
+
+        var vowel = 'a';
+        var vowelIdx = -1;
+        for (var vi = wylie.length - 1; vi >= 0; vi--) {
+            var ch = wylie.charAt(vi);
+            if (ch === 'i' || ch === 'u' || ch === 'e' || ch === 'o') {
+                if (vi > 0) {
+                    var prev = wylie.charAt(vi - 1);
+                    if (prev >= 'a' && prev <= 'z' && prev !== '\'') {
+                        vowel = ch;
+                        vowelIdx = vi;
+                        break;
+                    }
+                }
+            }
+        }
+
+        var consonantStack, suffixPart;
+        if (vowelIdx >= 0) {
+            consonantStack = wylie.slice(0, vowelIdx);
+            suffixPart = wylie.slice(vowelIdx + 1);
+        } else {
+            var lastA = wylie.lastIndexOf('a');
+            if (lastA >= 0) {
+                consonantStack = wylie.slice(0, lastA);
+                suffixPart = wylie.slice(lastA + 1);
+                if (consonantStack === '') {
+                    consonantStack = 'a';
+                    suffixPart = wylie.slice(1);
+                }
+            } else {
+                consonantStack = wylie;
+                suffixPart = '';
+            }
+        }
+
+        var suffix = '';
+        var postSuffix = '';
+        if (suffixPart.length > 0) {
+            var foundSplit = false;
+            for (var suffixLen = 2; suffixLen >= 1; suffixLen--) {
+                if (suffixPart.length > suffixLen) {
+                    var candSuffix = suffixPart.slice(0, suffixLen);
+                    var candPost = suffixPart.slice(suffixLen);
+                    if (SUFFIXES[candSuffix] && POST_SUFFIXES[candPost]) {
+                        suffix = candSuffix;
+                        postSuffix = candPost;
+                        foundSplit = true;
+                        break;
+                    }
+                }
+            }
+            if (!foundSplit) {
+                if (suffixPart.length <= 2 && SUFFIXES[suffixPart]) {
+                    suffix = suffixPart;
+                } else if (suffixPart.length === 1 && SUFFIXES[suffixPart]) {
+                    suffix = suffixPart;
+                }
+            }
+        }
+
+        var tokens = tokenizeConsonants(consonantStack);
+        var prefix = '';
+        var superscript = '';
+        var rootKey = '';
+        var subscriptKey = '';
+        var dotAfterRoot = false;
+        var idx = 0;
+
+        if (idx < tokens.length && tokens[idx].type === 'consonant' && PREFIXES[tokens[idx].value]) {
+            if (tokens.length > 1) {
+                var nextToken = tokens[idx + 1];
+                var nextIsSubscript = nextToken && nextToken.type === 'consonant' && SUBSCRIPTS[nextToken.value];
+                if (!(tokens.length === 2 && nextIsSubscript)) {
+                    prefix = tokens[idx].value;
+                    idx++;
+                }
+            }
+        }
+
+        if (idx < tokens.length && tokens[idx].type === 'consonant' && SUPERSCRIPTS[tokens[idx].value]) {
+            if (idx + 1 < tokens.length) {
+                superscript = tokens[idx].value;
+                idx++;
+            }
+        }
+
+        if (idx < tokens.length && tokens[idx].type === 'dot') {
+            dotAfterRoot = true;
+            idx++;
+        }
+
+        var remainingTokens = tokens.slice(idx);
+        if (remainingTokens.length > 0) {
+            rootKey = remainingTokens[0].value;
+            if (remainingTokens.length > 1 && !dotAfterRoot) {
+                var nextToken = remainingTokens[1];
+                if (nextToken.type === 'consonant' && SUBSCRIPTS[nextToken.value]) {
+                    if (!(idx + 2 < tokens.length && tokens[idx + 2].type === 'dot')) {
+                        subscriptKey = nextToken.value;
+                    }
+                }
+            }
+        }
+
+        if (!rootKey) {
+            result.error = 'Не удалось определить корень слога';
+            return result;
+        }
+
+        var rootKeyLong = mapShortToLong(rootKey);
+        if (!WYLIE_MAP[rootKeyLong]) {
+            result.error = 'Неизвестная буква: ' + rootKey;
+            return result;
+        }
+        var rootShort = rootKey;
+        rootKey = rootKeyLong;
+
+        var stackParts = [];
+        if (superscript) {
+            var supLong = mapShortToLong(superscript);
+            stackParts.push({ char: WYLIE_MAP[supLong] || '?', wylie: superscript, role: 'надстрочная' });
+        }
+        if (rootKey) {
+            var rootChar = WYLIE_MAP[rootKey] || '?';
+            if (superscript) {
+                var subRoot = SUBJOINED_MAP[rootKey];
+                stackParts.push({ char: subRoot || rootChar, wylie: rootKey, role: 'корень (подпис.)' });
+            } else {
+                stackParts.push({ char: rootChar, wylie: rootKey, role: 'корень' });
+            }
+        }
+        if (subscriptKey) {
+            var subLong = mapShortToLong(subscriptKey);
+            var subChar = SUBJOINED_MAP[subLong];
+            if (subChar) {
+                stackParts.push({ char: subChar, wylie: subscriptKey, role: 'подстрочная' });
+            }
+        }
+
+        var stackTibetan = '';
+        for (var si = 0; si < stackParts.length; si++) {
+            stackTibetan += stackParts[si].char;
+        }
+
+        var vowelChar = (vowel !== 'a') ? VOWELS[vowel] : '';
+
+        var suffixTib = '';
+        if (suffix) {
+            var suffixLong = mapShortToLong(suffix);
+            suffixTib = WYLIE_MAP[suffixLong] || '';
+        }
+        var postSuffixTib = '';
+        if (postSuffix) {
+            var postSuffixLong = mapShortToLong(postSuffix);
+            postSuffixTib = WYLIE_MAP[postSuffixLong] || '';
+        }
+
+        var prefixTib = '';
+        if (prefix) {
+            var prefixLong = mapShortToLong(prefix);
+            prefixTib = WYLIE_MAP[prefixLong] || '?';
+        }
+
+        result.tibetan = prefixTib + stackTibetan + vowelChar + suffixTib + postSuffixTib || '?';
+        result.vowel = vowel;
+        result.vowelIdx = vowelIdx >= 0 ? vowelIdx : (wylie.lastIndexOf('a') >= 0 ? wylie.lastIndexOf('a') : -1);
+        result.consonantStack = consonantStack;
+        result.suffixPart = suffixPart;
+        result.prefix = prefix;
+        result.superscript = superscript;
+        result.root = rootKey;
+        result.rootShort = rootShort;
+        result.subscript = subscriptKey;
+        result.suffix = suffix;
+        result.postSuffix = postSuffix;
+        result.rootTibetan = stackTibetan;
+        result.stackParts = stackParts;
+
+        result.pronunciation = getTHLPronunciation(result);
+
+        var steps = [];
+        var n = 0;
+        if (prefix) {
+            steps.push({ num: ++n, component: 'Префикс', wylie: prefix, tibetan: prefixTib, desc: 'стоящая перед корнем буква, влияет на тон' });
+        }
+        if (superscript) {
+            steps.push({ num: ++n, component: 'Надстрочная', wylie: superscript, tibetan: WYLIE_MAP[mapShortToLong(superscript)] || '?', desc: 'буква над корнем, понижает тон и озвончает корень' });
+        }
+        steps.push({ num: ++n, component: 'Корень', wylie: rootKey, tibetan: subscriptKey ? WYLIE_MAP[rootKey] + ' + подстр.' : WYLIE_MAP[rootKey], desc: 'основная буква, несущая гласную' });
+        if (subscriptKey) {
+            steps.push({ num: ++n, component: 'Подстрочная', wylie: subscriptKey, tibetan: SUBJOINED_MAP[mapShortToLong(subscriptKey)] || '?', desc: 'буква под корнем, меняет звучание' });
+        }
+        steps.push({ num: ++n, component: 'Гласная', wylie: vowel === 'a' ? '(a)' : vowel, tibetan: vowel === 'a' ? '(нет)' : VOWELS[vowel], desc: VOWEL_NAMES[vowel] || '' });
+        if (suffix) {
+            steps.push({ num: ++n, component: 'Суффикс', wylie: suffix, tibetan: suffixTib, desc: 'закрывает слог, может менять гласную' });
+        }
+        if (postSuffix) {
+            steps.push({ num: ++n, component: 'Постсуффикс', wylie: postSuffix, tibetan: postSuffixTib, desc: 'дополнительная буква после суффикса' });
+        }
+        result.steps = steps;
+
+        return result;
+    }
+
+    function generateWalkthrough(result) {
+        var qa = [];
+        var accWylie = '';
+        var accTib = '';
+
+        function add(q, a, wAdd, tAdd, quick) {
+            accWylie += wAdd || '';
+            accTib += tAdd || '';
+            qa.push({ wylie: accWylie, tibetan: accTib, question: q, answer: a, quick: !!quick });
+        }
+
+        function letterSkip(letter, setName, setMembers, inSet, roleName) {
+            if (!letter) {
+                add('В слоге есть ' + roleName + '?', 'Нет.', '', '', true);
+            } else if (inSet) {
+                add(
+                    'Буква "' + letter + '" входит в набор ' + setName + ' {' + setMembers + '}?',
+                    'Да. "' + letter + '" есть среди ' + setName + ', но в этом слоге она не ' + setName + ', а корень.',
+                    '', '', true
+                );
+            } else {
+                add(
+                    'Буква "' + letter + '" входит в набор ' + setName + ' {' + setMembers + '}?',
+                    'Нет. "' + letter + '" нет в наборе ' + setName + '.',
+                    '', '', true
+                );
+            }
+        }
+
+        var prefixTib = '';
+        if (result.prefix) {
+            prefixTib = WYLIE_MAP[mapShortToLong(result.prefix)] || '';
+        }
+        var superTib = '';
+        var rootTib = '';
+        var subTib = '';
+        result.stackParts.forEach(function(sp) {
+            if (sp.role === 'надстрочная') superTib = sp.char;
+            else if (sp.role === 'корень' || sp.role === 'корень (подпис.)') rootTib = sp.char;
+            else if (sp.role === 'подстрочная') subTib = sp.char;
+        });
+        var vowelTib = (result.vowel !== 'a') ? (VOWELS[result.vowel] || '') : '';
+        var suffixTib = '';
+        if (result.suffix) {
+            suffixTib = WYLIE_MAP[mapShortToLong(result.suffix)] || '';
+        }
+        var postSuffixTib = '';
+        if (result.postSuffix) {
+            postSuffixTib = WYLIE_MAP[mapShortToLong(result.postSuffix)] || '';
+        }
+
+        var rShort = result.rootShort || '';
+        var wl = result.wylie;
+
+        // Reconstruct consonant stack (everything before vowel)
+        var conStack = wl;
+        for (var ci = wl.length - 1; ci >= 0; ci--) {
+            var ch = wl.charAt(ci);
+            if (ch === 'i' || ch === 'u' || ch === 'e' || ch === 'o') {
+                if (ci > 0) {
+                    var prev = wl.charAt(ci - 1);
+                    if (prev >= 'a' && prev <= 'z' && prev !== "'") {
+                        conStack = wl.slice(0, ci);
+                        break;
+                    }
+                }
+            }
+        }
+        if (conStack === wl) {
+            var lastA = wl.lastIndexOf('a');
+            if (lastA >= 0) conStack = wl.slice(0, lastA);
+        }
+
+        // Candidate for subscript: letter after root in consonant stack
+        var subCand = '';
+        var rootPos = conStack.indexOf(rShort);
+        if (rootPos >= 0) {
+            var afterRoot = conStack.slice(rootPos + rShort.length);
+            if (afterRoot.length > 0) subCand = afterRoot.charAt(0);
+        }
+
+        // Candidate for superscript: letter after prefix, or first letter if no prefix
+        var supCand = '';
+        if (result.prefix) {
+            supCand = wl.charAt(result.prefix.length);
+        } else {
+            var fc0 = wl.charAt(0);
+            if (!PREFIXES[fc0]) supCand = fc0;
+        }
+
+        // 0. Гласная (поиск)
+        if (result.vowelIdx >= 0) {
+            var v = result.vowel === 'a' ? 'врождённая "a"' : '"' + result.vowel + '"';
+            add(
+                'В слоге "' + wl + '" ищем гласную справа налево. Гласная ' + v + ' на позиции ' + (result.vowelIdx + 1) + '?',
+                'Да. Всё до гласной — ' + (result.consonantStack.length === 1 ? 'согласная' : 'стопка согласных') + ' "' + result.consonantStack + '".' + (result.suffixPart ? ' Всё после (суффикс + постсуффикс) — "' + result.suffixPart + '".' : ''),
+                '', '', false
+            );
+        } else {
+            add(
+                'В слоге "' + wl + '" ищем гласную справа налево. Гласных нет?',
+                'Да. Вся строка — ' + (result.consonantStack.length === 1 ? 'согласная' : 'стопка согласных') + ' "' + result.consonantStack + '". Гласная — врождённая "a".',
+                '', '', false
+            );
+        }
+
+        // 1. Префикс
+        var fc = wl.charAt(0);
+        if (result.prefix) {
+            add(
+                'Буква "' + result.prefix + '" входит в набор префиксов {g, d, b, m, \'}?',
+                'Да. После "' + result.prefix + '" идёт корень "' + rShort + '". "' + result.prefix + '" — префикс, он влияет на тон слога.',
+                result.prefix, prefixTib
+            );
+        } else if (result.superscript && PREFIXES[fc]) {
+            add(
+                'Буква "' + fc + '" входит в набор префиксов {g, d, b, m, \'}?',
+                'Да. "' + fc + '" есть среди префиксов, но после "' + fc + '" нет корня — следующая буква не может быть корнем слога. Значит "' + fc + '" — не префикс.',
+                '', '', true
+            );
+        } else if (PREFIXES[fc] && result.subscript) {
+            add(
+                'Буква "' + fc + '" входит в набор префиксов {g, d, b, m, \'}?',
+                'Да. "' + fc + '" есть среди префиксов, но после "' + fc + '" нет корня — следующая буква не может быть корнем слога. Значит "' + fc + '" — не префикс, а корень.',
+                '', '', true
+            );
+        } else if (PREFIXES[fc]) {
+            add(
+                'Буква "' + fc + '" входит в набор префиксов {g, d, b, m, \'}?',
+                'Да. "' + fc + '" есть среди префиксов, но после "' + fc + '" нет других согласных — это корень, а не префикс.',
+                '', '', true
+            );
+        } else {
+            letterSkip(fc, 'префиксов', 'g, d, b, m, \'', false, 'префикс');
+        }
+
+        // 2. Надстрочная
+        if (result.superscript) {
+            add(
+                'Буква "' + result.superscript + '" входит в набор надстрочных {r, l, s}?',
+                'Да. ' + ({
+                    r: '"r" пишется над корнем. В произношении Лхасы не слышится отдельно; тон слога повышается.',
+                    l: '"l" пишется над корнем. В произношении Лхасы не слышится отдельно; тон слога понижается.',
+                    s: '"s" пишется над корнем. Озвончает начальный согласный корня; тон слога понижается.'
+                }[result.superscript] || '"' + result.superscript + '" пишется над корнем, влияет на тон слога.'),
+                result.superscript, superTib
+            );
+        } else {
+            letterSkip(supCand, 'надстрочных', 'r, l, s', SUPERSCRIPTS[supCand], 'надстрочная');
+        }
+
+        // 3. Корень
+        var rootQ = result.prefix || result.superscript
+            ? 'Оставшаяся буква "' + rShort + '" — корень слога?'
+            : 'Буква "' + rShort + '" — корень слога?';
+        add(rootQ, 'Да. Корень — основная буква слога, несущая гласную.',
+            rShort, rootTib);
+
+        // 4. Подстрочная
+        if (result.subscript) {
+            add(
+                'Буква "' + result.subscript + '" входит в набор подстрочных {y, r, l, w}?',
+                'Да. "' + result.subscript + '" подписывается под корень.',
+                result.subscript, subTib
+            );
+        } else {
+            letterSkip(subCand, 'подстрочных', 'y, r, l, w', SUBSCRIPTS[subCand], 'подстрочная');
+        }
+
+        // 5. Гласная
+        if (result.vowel === 'a') {
+            add(
+                'Гласная не указана — действует врождённая "а"?',
+                'Да. Если после корня нет i, u, e, o — читается врождённая "а". Она уже входит в состав корня.',
+                '', vowelTib
+            );
+        } else {
+            var pos = VOWEL_POS[result.vowel] || '(над/под)';
+            add(
+                'Буква "' + result.vowel + '" — это гласная?',
+                'Да. Гласная "' + result.vowel + '" (' + VOWEL_NAMES[result.vowel] + ') пишется ' + pos + ' слогом.',
+                result.vowel, vowelTib
+            );
+        }
+
+        // 6. Суффикс
+        if (result.suffix) {
+            add(
+                '"' + result.suffix + '" входит в набор суффиксов {g, ng, d, n, b, m, \', r, l, s}?',
+                'Да. "' + result.suffix + '" закрывает слог.',
+                result.suffix, suffixTib
+            );
+        } else {
+            add('В слоге есть суффикс?', 'Нет, слог открытый.', '', '', true);
+        }
+
+        // 7. Постсуффикс
+        if (result.postSuffix) {
+            add(
+                '"' + result.postSuffix + '" — постсуффикс {s, d}?',
+                'Да. "' + result.postSuffix + '" — дополнительная буква после суффикса.',
+                result.postSuffix, postSuffixTib
+            );
+        } else {
+            add('В слоге есть постсуффикс?', 'Нет.', '', '', true);
+        }
+
+        return qa;
+    }
+
+    var input = document.getElementById('wylie-input');
+    var analyzeBtn = document.getElementById('analyze-btn');
+    var resultArea = document.getElementById('result-area');
+    var resultHeader = document.getElementById('result-header');
+    var walkthroughArea = document.getElementById('walkthrough-area');
+    var buildArea = document.getElementById('build-area');
+    var errorMsg = document.getElementById('error-msg');
+    var notesArea = document.getElementById('notes-area');
+    var _revealTimer = null;
+
+    document.querySelectorAll('.examples button').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            input.value = this.getAttribute('data-wylie');
+            analyze();
+        });
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') analyze();
+    });
+
+    analyzeBtn.addEventListener('click', analyze);
+
+    function analyze() {
+        var val = input.value.trim();
+        if (!val) {
+            errorMsg.textContent = 'Введите слово в системе Вайли.';
+            resultArea.classList.remove('visible');
+            return;
+        }
+        if (_revealTimer) { clearTimeout(_revealTimer); _revealTimer = null; }
+        resultHeader.innerHTML = '';
+        walkthroughArea.innerHTML = '';
+        buildArea.innerHTML = '';
+        notesArea.textContent = '';
+        errorMsg.textContent = '';
+        var words = val.split(/\s+/);
+        var allResults = [];
+        var wordGroups = [];
+        for (var wi = 0; wi < words.length; wi++) {
+            var word = words[wi].toLowerCase();
+            var syllables = word.split('-').filter(function(s) { return s; });
+            if (syllables.length === 0) {
+                errorMsg.textContent = 'Пустой слог в слове "' + words[wi] + '"';
+                resultArea.classList.remove('visible');
+                return;
+            }
+            var group = [];
+            for (var sj = 0; sj < syllables.length; sj++) {
+                var result = parseSyllable(syllables[sj]);
+                if (!result || result.error) {
+                    errorMsg.textContent = (result ? result.error : 'Ошибка разбора') + ' в слоге "' + syllables[sj] + '" слова "' + words[wi] + '"';
+                    resultArea.classList.remove('visible');
+                    return;
+                }
+                group.push(result);
+                allResults.push(result);
+            }
+            wordGroups.push(group);
+        }
+        if (allResults.length > 10) {
+            errorMsg.textContent = 'Слишком много слогов (макс. 10).';
+            resultArea.classList.remove('visible');
+            return;
+        }
+        resultArea.classList.add('visible');
+        renderResults(allResults, wordGroups);
+    }
+
+    function renderResults(results, wordGroups) {
+        var tibetan = results.map(function(r) { return r.tibetan; }).join('\u0F0B');
+        var wylie = wordGroups.map(function(g) {
+            return g.map(function(r) { return r.wylie; }).join('-');
+        }).join(' ');
+        var pron = results.map(function(r) { return r.pronunciation; }).join(' ');
+
+        resultHeader.innerHTML =
+            '<div class="result-tibetan">' + tibetan + '</div>' +
+            '<div class="result-wylie">Вайли: <b>' + wylie + '</b></div>' +
+            (pron ? '<div class="result-pronunciation">[' + pron + ']</div>' : '');
+
+        var wtHtml = '';
+        var allNotes = [];
+        var buildsHtml = '';
+
+        for (var i = 0; i < results.length; i++) {
+            var r = results[i];
+            if (results.length > 1) {
+                var headWylie = r.wylie;
+                var headTib = r.tibetan;
+                wtHtml += '<div class="wt-syl-header">Слог ' + (i + 1) + ': ' + headWylie + ' → ' + headTib + '</div>';
+            }
+
+            var qa = generateWalkthrough(r);
+            qa.forEach(function(item) {
+                var stepClass = 'wt-step' + (item.quick ? ' wt-step-quick' : '');
+                wtHtml +=
+                    '<div class="' + stepClass + '">' +
+                        '<div class="wt-left">' +
+                            '<div class="wt-tibetan">' + (item.tibetan || '') + '</div>' +
+                            '<div class="wt-wylie">' + (item.wylie || '') + '</div>' +
+                        '</div>' +
+                        '<div class="wt-body">' +
+                            '<div class="wt-question">' + item.question + '</div>' +
+                            '<div class="wt-answer">' + item.answer + '</div>' +
+                        '</div>' +
+                    '</div>';
+            });
+
+            if (r.superscript) {
+                allNotes.push(({
+                    r: 'r — надстрочная: не произносится отдельно, тон слога высокий.',
+                    l: 'l — надстрочная: не произносится отдельно, тон слога низкий.',
+                    s: 's — надстрочная: начальный согласный корня озвончается, тон слога низкий.'
+                }[r.superscript] || 'Надстрочная ' + r.superscript + ' влияет на тон слога.'));
+            }
+            if (r.postSuffix) {
+                allNotes.push('Постсуффикс ' + r.postSuffix + ' — дополнительная буква после суффикса.');
+            }
+
+            if (i > 0) buildsHtml += '<hr style="margin:1rem 0;border:none;border-top:1px solid #ede4dc;">';
+            buildsHtml += buildHTML(r);
+        }
+
+        if (!wtHtml) {
+            wtHtml = '<div class="wt-step"><div class="wt-body"><div class="wt-answer">Нет шагов для отображения.</div></div></div>';
+            walkthroughArea.innerHTML = wtHtml;
+        } else {
+            walkthroughArea.innerHTML = wtHtml;
+            var stepEls = walkthroughArea.querySelectorAll('.wt-step');
+            revealStep(0, stepEls);
+        }
+
+        buildArea.innerHTML = buildsHtml || '<div class="build-inner"><div class="part">—</div></div>';
+        notesArea.textContent = allNotes.join(' ');
+    }
+
+    function revealStep(i, stepEls) {
+        if (i >= stepEls.length) return;
+        var el = stepEls[i];
+        el.classList.add('revealed');
+        var answer = el.querySelector('.wt-answer');
+        if (answer) answer.classList.add('revealed');
+        if (el.classList.contains('wt-step-quick')) {
+            _revealTimer = setTimeout(function() { revealStep(i + 1, stepEls); }, 400);
+        } else {
+            _revealTimer = setTimeout(function() {
+                _revealTimer = setTimeout(function() {
+                    revealStep(i + 1, stepEls);
+                }, 300);
+            }, 600);
+        }
+    }
+
+    function renderBuild(result) {
+        buildArea.innerHTML = buildHTML(result);
+    }
+
+    function buildHTML(result) {
+        var html = '<div class="build-inner">';
+
+        if (result.prefix) {
+            var pL = mapShortToLong(result.prefix);
+            html += '<div class="part"><div class="tib-char">' + (WYLIE_MAP[pL] || '?') + '</div><div class="part-label">префикс</div></div>';
+        }
+        if (result.superscript) {
+            html += '<div class="part"><div class="tib-char">' + WYLIE_MAP[mapShortToLong(result.superscript)] + '</div><div class="part-label">надстр.</div></div>';
+        }
+        var rootChar = result.superscript ? (SUBJOINED_MAP[result.root] || WYLIE_MAP[result.root] || '?') : (WYLIE_MAP[result.root] || '?');
+        html += '<div class="part"><div class="tib-char">' + rootChar + '</div><div class="part-label">корень</div></div>';
+        if (result.subscript) {
+            html += '<div class="part"><div class="tib-char">' + (SUBJOINED_MAP[mapShortToLong(result.subscript)] || '') + '</div><div class="part-label">подстр.</div></div>';
+        }
+        if (result.vowel && result.vowel !== 'a') {
+            html += '<div class="part"><div class="tib-char">' + VOWELS[result.vowel] + '</div><div class="part-label">гласная</div></div>';
+        }
+        if (result.suffix) {
+            var sL = mapShortToLong(result.suffix);
+            html += '<div class="part"><div class="tib-char">' + (WYLIE_MAP[sL] || '?') + '</div><div class="part-label">суффикс</div></div>';
+        }
+        if (result.postSuffix) {
+            var psL = mapShortToLong(result.postSuffix);
+            html += '<div class="part"><div class="tib-char">' + (WYLIE_MAP[psL] || '?') + '</div><div class="part-label">постсуф.</div></div>';
+        }
+
+        html += '<div class="build-eq">=</div>';
+        html += '<div class="build-result">' + result.tibetan + '</div>';
+
+        html += '</div>';
+        return html;
+    }
+
+    var examples = ['bsgom', 'sgra', 'drung', 'phyogs', 'rdzogs', 'bsam', 'klog', 'mkhyen', 'g.yung', "'phags-pa", 'rdo-rje'];
+    input.value = examples[Math.floor(Math.random() * examples.length)];
+    input.placeholder = 'введите слово Вайли...';
+})();
+</script>
+</body>
+</html>
